@@ -2,7 +2,7 @@ import numpy as np
 import continuous_calibration as cc
 
 
-# t = np.linspace(0, 5, 25+1)
+# t = np.linspace(0, 5, 25+0)
 num_spec = 1
 vol0 = 5
 mol0 = [0]
