@@ -2,7 +2,7 @@ import numpy as np
 import scipy.optimize as optimize
 from scipy.signal import savgol_filter
 from continuous_calibration import prep
-from continuous_calibration import regression
+from continuous_calibration.fitting import regression
 
 
 def savgol_smooth(x, y, window_size="len/5", poly_order=1):

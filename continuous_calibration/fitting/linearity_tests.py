@@ -9,20 +9,24 @@ from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.diagnostic import kstest_normal
 
 
-def rainbow_test(x, y, upper_lim):
-    model = smf.OLS(y[:upper_lim], x[:upper_lim]).fit()
+def harvey_collier_test(model):
+    statistic, p_value = sms.linear_harvey_collier(model, skip=2)
+    return p_value
+
+
+def rainbow_test(model):
     statistic, p_value = sms.linear_rainbow(model)
     return p_value
 
 
-def harvey_collier_test(x, y, upper_lim):
-    model = smf.OLS(y[:upper_lim], x[:upper_lim]).fit()
-    statistic, p_value, _, _ = het_breuschpagan(model.resid, sm.add_constant(model.model.exog))
+def runs_test(model):
+    statistic, p_value = runstest_1samp(model.resid)
     return p_value
 
 
-def runs_test(residuals):
-    statistic, p_value = runstest_1samp(residuals)
+def breusch_pagan_lagrange(x, y, upper_lim):
+    model = smf.OLS(y[:upper_lim + 1], x[:upper_lim + 1]).fit()
+    statistic, p_value, _, _ = het_breuschpagan(model.resid, sm.add_constant(model.model.exog))
     return p_value
 
 
@@ -43,7 +47,7 @@ def residuals_start_middle_end(conc, intensity, lower_lim, upper_lim, fit_line):
           stats.mean(intensity[upper_lim-10:upper_lim, 0] - fit_line[upper_lim-10:upper_lim, 0]))
 
 
-def p_value_pass(p_value, threshold=0.1):
+def p_value_pass(p_value, threshold=0.05):
     if p_value >= threshold:
         test_pass = True
     else:
