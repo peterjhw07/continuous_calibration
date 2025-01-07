@@ -3,13 +3,13 @@ import pandas as pd
 from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
 from statsmodels.nonparametric.smoothers_lowess import lowess
-from continuous_calibration.fitting import lol, breakpoint
+from continuous_calibration.fitting import lol, breakpoint, regression
 from continuous_calibration.prep import export, get_prep, store_obj, volume
 
 
 def run(df, spec_name=None, t_col=0, col=1, mol0=None, vol0=None, add_sol_conc=[], add_cont_rate=[], t_cont=[],
         add_one_shot=[], t_one_shot=[], sub_cont_rate=0, diffusion_delay=0,
-        intercept=False, get_lol=None, p_thresh=0.05, path_length=None, win=1, inc=1, sg_win=10,
+        fit_eq="linear", intercept=False, get_lol=None, p_thresh=0.05, path_length=None, win=1, inc=1, sg_win=11,
         time_unit="time_unit", conc_unit="moles_unit volume_unit$^{-1}$", intensity_unit="AU",
         path_length_unit="path_length_unit"):
 
@@ -40,7 +40,7 @@ def run(df, spec_name=None, t_col=0, col=1, mol0=None, vol0=None, add_sol_conc=[
     # Convert time and conc_events into conc
     data.conc, data.mol, data.vol = volume.get_conc_events(t, num_spec, vol0, mol0, add_sol_conc, add_cont_rate, t_cont,
                                                            add_one_shot, t_one_shot, sub_cont_rate)
-    breakpoint.get_breakpoints(t, intensity[:, 0])
+    # breakpoint.get_breakpoints(t, intensity[:, 0])
 
     # Store time data
     data.raw_df = pd.DataFrame(np.concatenate([t.reshape(-1, 1), intensity, data.conc], axis=1),
@@ -69,12 +69,14 @@ def run(df, spec_name=None, t_col=0, col=1, mol0=None, vol0=None, add_sol_conc=[
     except:
         pass
 
-    if get_lol:
+    if "lin" in fit_eq and get_lol:
         data.lol_tests_df, data.lol_df, data.fit_lines, data.fit_resid, data.gradient, data.intercept, data.mec = \
             lol.get_lol(data.avg_conc, data.avg_intensity, spec_name, intercept=intercept, path_length=path_length,
                         threshold=p_thresh, intensity_unit=intensity_unit, conc_unit=conc_unit,
                         path_length_unit=path_length_unit)
         data.lol = data.lol_df["LOL"].to_list()
+    elif "exp" in fit_eq:
+        a = regression.fit_intensity_curve(data.avg_conc, data.avg_intensity)
     else:
         data.fit_lines, data.fit_resid, data.lol, data.gradient, data.intercept, data.mec = None, None, None, None, \
                                                                                             None, None

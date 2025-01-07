@@ -41,13 +41,24 @@ def fit_intensity_curve(conc, exp_intensity, initial_guess=[1.0, 1.0, 0.0]):
 
     # Define the model function
     def intensity_model(conc, A, k, conc0):
+        print(conc, A, k, conc0)
+        print(A * (1 - np.exp(-k * conc)) + conc0)
         return A * (1 - np.exp(-k * conc)) + conc0
 
     # Perform the curve fitting
-    popt, pcov = curve_fit(intensity_model, conc, exp_intensity, p0=initial_guess)
+    total_popt = []
+    total_pcov = []
+    for spec in len(conc):
+        print(conc, exp_intensity)
+        popt, pcov = curve_fit(intensity_model, conc[spec], exp_intensity[spec], p0=initial_guess,
+                               )  # bounds=(low_bounds, up_bounds), maxfev=10000, method='trf'
+        perr = np.sqrt(np.diag(pcov))
+        total_popt.append(popt)
+        total_pcov.apend(pcov)
+        total_perr.append(perr)
 
     # Calculate the standard errors (square root of the diagonal elements of the covariance matrix)
-    perr = np.sqrt(np.diag(pcov))
+
 
     return popt, perr, pcov
 

@@ -45,7 +45,10 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
         # ax_upper.set_ylim([-10, 50])
         ax.set_xlabel('Conc. / ' + conc_unit, fontsize=font_size)
         ax.set_ylabel('Intensity / ' + intensity_unit, fontsize=font_size)
-        ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+        if limit is not None:
+            ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
+        else:
+            ax.tick_params(axis='x', which='major', labelsize=font_size)
         ax.tick_params(axis='y', which='major', labelsize=font_size)
         ax.legend(loc='lower right', fontsize=font_size, frameon=False)
 

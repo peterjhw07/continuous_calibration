@@ -34,13 +34,13 @@ if __name__ == "__main__":
     input_df.replace('""', None, inplace=True)
     input_df = input_df[["Number", "Description", "spec_name", "t_col", "col", "mol0", "vol0", "add_sol_conc",
                          "add_cont_rate", "t_cont", "add_one_shot", "t_one_shot", "sub_cont_rate", "diffusion_delay",
-                         "intercept", "get_lol", "path_length", "win", "inc", "sg_win", "time_unit", "conc_unit",
-                         "intensity_unit", "path_length_unit", "filename", "sheet_name", "pic_save"]]
+                         "fit_eq", "intercept", "get_lol", "path_length", "win", "inc", "sg_win", "time_unit",
+                         "conc_unit", "intensity_unit", "path_length_unit", "filename", "sheet_name", "pic_save"]]
 
     total = np.empty([len(input_df), 7], object)
     for i in range(0, len(input_df)):
         [number, description, spec_name, t_col, col, mol0, vol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot,
-         t_one_shot, sub_cont_rate, diffusion_delay, intercept, get_lol, path_length, win, inc, sg_win,
+         t_one_shot, sub_cont_rate, diffusion_delay, fit_eq, intercept, get_lol, path_length, win, inc, sg_win,
          time_unit, conc_unit, intensity_unit, path_length_unit, filename, sheet_name, pic_save] = input_df.iloc[i, :]
         print(number, description)
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         # cProfile.run('print(
         data = cc.run(df, spec_name=spec_name, t_col=t_col, col=col, mol0=mol0, vol0=vol0, add_sol_conc=add_sol_conc,
                       add_cont_rate=add_cont_rate, t_cont=t_cont, add_one_shot=add_one_shot, t_one_shot=t_one_shot,
-                      sub_cont_rate=sub_cont_rate, diffusion_delay=diffusion_delay, intercept=intercept,
+                      sub_cont_rate=sub_cont_rate, diffusion_delay=diffusion_delay, fit_eq=fit_eq, intercept=intercept,
                       get_lol=get_lol, path_length=path_length, win=win, inc=inc, sg_win=sg_win, time_unit=time_unit,
                       conc_unit=conc_unit, intensity_unit=intensity_unit, path_length_unit=path_length_unit)
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         save_to_replace = pic_save.replace('.png', '_intensity_vs_conc.png')
         data.plot_intensity_vs_conc(f_format='png', save_to=save_to_replace)
 
-        if plot_lol_tests:
+        if "lin" in fit_eq and get_lol and plot_lol_tests:
             save_to_replace = pic_save.replace('.png', '_lol_tests.png')
             data.plot_lol_tests(f_format='png', save_to=save_to_replace)
 
