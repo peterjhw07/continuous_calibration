@@ -11,18 +11,18 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
                            return_image=False, transparent=False, font_size=12):
 
     num_spec = conc.shape[1]
-    if limit is not None:
+    if fit_resid is not None:
         fig, axes = plt.subplots(nrows=2, ncols=num_spec, figsize=(num_spec * 6, 5),
                                  gridspec_kw={'height_ratios': [3, 1]})
     else:
         fig, axes = plt.subplots(nrows=1, ncols=num_spec, figsize=(num_spec * 6, 5))
 
     for col in range(num_spec):
-        if num_spec > 1 and limit is not None:
+        if num_spec > 1 and fit_resid is not None:
             ax = axes[0, col]
-        elif num_spec > 1 and limit is None:
+        elif num_spec > 1 and not fit_resid is not None:
             ax = axes[col]
-        elif limit is not None:
+        elif fit_resid is not None:
             ax = axes[0]
         else:
             ax = axes
@@ -31,13 +31,15 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
             ax.errorbar(conc, intensity.flatten().tolist(), yerr=intensity_error.flatten().tolist(),
                               fmt='none', ecolor='k', capsize=5, capthick=1, elinewidth=1)
         if smooth_intensity is not None:
-            ax.plot(conc, smooth_intensity, 'g', label='Smoothed Fit')
-        if fit_line is not None and fit_resid is not None and limit is not None:
+            ax.plot(conc, smooth_intensity, 'g', label='Smoothed Data')
+        if fit_line is not None and limit is not None:
             ax.plot(conc[:limit[col] + 1, col], fit_line[:limit[col] + 1, col], 'r', label='Linear Fit')
             try:
                 ax.axvline(x=conc[limit, col], color='b', linestyle='--', label='Limit of Linearity')
             except:
                 pass
+        elif fit_line is not None:
+            ax.plot(conc[:, col], fit_line[:, col], 'r', label='Fit')
         if not xlim:
             ax.set_xlim([min(conc[:, col]), max(conc[:, col])])
         else:
@@ -45,26 +47,29 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
         # ax_upper.set_ylim([-10, 50])
         ax.set_xlabel('Conc. / ' + conc_unit, fontsize=font_size)
         ax.set_ylabel('Intensity / ' + intensity_unit, fontsize=font_size)
-        if limit is not None:
+        if fit_resid is not None:
             ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
         else:
             ax.tick_params(axis='x', which='major', labelsize=font_size)
         ax.tick_params(axis='y', which='major', labelsize=font_size)
         ax.legend(loc='lower right', fontsize=font_size, frameon=False)
 
-        if limit is not None:
-            if num_spec > 1 and limit is not None:
+        if fit_resid is not None:
+            if num_spec > 1 and fit_resid is not None:
                 ax = axes[1, col]
             else:
                 ax = axes[1]
-            ax.scatter(conc[:limit[col] + 1, col], fit_resid[:limit[col] + 1, col], 8, 'k', label='Residuals')
+            if limit:
+                ax.scatter(conc[:limit[col] + 1, col], fit_resid[:limit[col] + 1, col], 8, 'k', label='Residuals')
+                try:
+                    ax.axvline(x=conc[limit[col], col], color='b', linestyle='--', label='Limit of Linearity')
+                except:
+                    pass
+            else:
+                ax.scatter(conc[:, col], fit_resid[:, col], 8, 'k', label='Residuals')
             #if intensity_error is not None:
             #    ax.errorbar(conc, intensity.flatten().tolist(), yerr=intensity_error.flatten().tolist(),
             #                fmt='none', ecolor='k', capsize=5, capthick=1, elinewidth=1)
-            try:
-                ax.axvline(x=conc[limit[col], col], color='b', linestyle='--', label='Limit of Linearity')
-            except:
-                pass
             if not xlim:
                 ax.set_xlim([min(conc[:, col]), max(conc[:, col])])
             else:

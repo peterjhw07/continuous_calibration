@@ -1,3 +1,5 @@
+"""CC Linearity Tests"""
+
 import numpy as np
 from statsmodels.sandbox.stats.runs import runstest_1samp
 from scipy.stats import shapiro

@@ -37,12 +37,16 @@ class Data:
                                return_fig=return_fig, return_image=return_image, transparent=transparent)
 
     def plot_intensity_vs_conc(self, conc_unit="", f_format='svg', save_to='cc_intensity_vs_conc.svg',
-                               return_fig=False, return_image=False, transparent=False):
+                               plot_resid=False, return_fig=False, return_image=False, transparent=False):
         if not conc_unit:
             conc_unit = self.conc_unit
+        if plot_resid:
+            fit_resid = self.fit_resid
+        else:
+            fit_resid = None
         plot_intensity_vs_conc(self.avg_conc, self.avg_intensity, smooth_intensity=self.sg_smooth_intensity,
                                intensity_error=self.error, limit=self.lol, fit_line=self.fit_lines,
-                               fit_resid=self.fit_resid, conc_unit=conc_unit, intensity_unit=self.intensity_unit,
+                               fit_resid=fit_resid, conc_unit=conc_unit, intensity_unit=self.intensity_unit,
                                f_format=f_format, save_to=save_to,
                                return_fig=return_fig, return_image=return_image, transparent=transparent)
 

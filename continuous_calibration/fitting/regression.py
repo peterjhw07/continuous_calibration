@@ -1,9 +1,10 @@
+import inspect
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 import sklearn.metrics
 import statsmodels.api as sm
-from continuous_calibration import prep
+from continuous_calibration.fitting import fit_eqs
 
 
 # Perform linear regression
@@ -24,7 +25,7 @@ def lin_regress(x, y, pre_upper_lim, intercept=False):
     return fit_res, pred.reshape(-1, 1)
 
 
-def fit_intensity_curve(conc, exp_intensity, initial_guess=[1.0, 1.0, 0.0]):
+def fit_intensity_curve(conc, exp_intensity, fit_eq, intercept=False, p0=None):
     """
     Fits the curve intensity = A * (1 - exp(-k * conc)) + conc0 to the given data
     and calculates the errors of the fitted parameters.
@@ -40,26 +41,39 @@ def fit_intensity_curve(conc, exp_intensity, initial_guess=[1.0, 1.0, 0.0]):
     """
 
     # Define the model function
-    def intensity_model(conc, A, k, conc0):
-        print(conc, A, k, conc0)
-        print(A * (1 - np.exp(-k * conc)) + conc0)
-        return A * (1 - np.exp(-k * conc)) + conc0
+    if "exp" in fit_eq.lower():
+        p0 = [1.0, 1.0]
+        if intercept:
+            model = fit_eqs.fit_eq_map.get("Exponential_intercept")
+            p0.append(0.0)
+        else:
+            model = fit_eqs.fit_eq_map.get("Exponential")
+    elif "custom" in fit_eq.lower() and not p0:
+        model = fit_eqs.fit_eq_map.get("Custom")
+        p0 = [1.0] * len(inspect.signature(model).parameters)
+    else:
+        try:
+            model = fit_eqs.fit_eq_map.get(fit_eq)
+        except:
+            print("Non-existent model name.")
 
     # Perform the curve fitting
-    total_popt = []
-    total_pcov = []
-    for spec in len(conc):
-        print(conc, exp_intensity)
-        popt, pcov = curve_fit(intensity_model, conc[spec], exp_intensity[spec], p0=initial_guess,
-                               )  # bounds=(low_bounds, up_bounds), maxfev=10000, method='trf'
-        perr = np.sqrt(np.diag(pcov))
-        total_popt.append(popt)
-        total_pcov.apend(pcov)
-        total_perr.append(perr)
+    popt, pcov, perr = [], [], []
+    fit_lines, fit_lines_resid = np.empty(shape=conc.shape), np.empty(shape=conc.shape)
+    for i in range(conc.shape[1]):
+        popt_it, pcov_it = curve_fit(model, conc[:, i], exp_intensity[:, i], p0=p0)
+        # Calculate the standard errors (square root of the diagonal elements of the covariance matrix)
+        perr_it = np.sqrt(np.diag(pcov_it))
+        popt.append(popt_it)
+        pcov.append(pcov_it)
+        perr.append(perr_it)
+        fit_lines[:, i] = model(conc[:, i], *popt_it)
+        fit_lines_resid[:, i] = exp_intensity[:, i] - fit_lines[:, i]
 
-    # Calculate the standard errors (square root of the diagonal elements of the covariance matrix)
+    FIX IT SO THAT ALL FIRST PARAMETERS ARE TOGETHER IN LIST, THEN SECOND, ETC. FOR EACH SPECIES
+    coeff = dict(zip(list(inspect.signature(model).parameters.keys())[1:], popt))
+    coeff_err = dict(zip(list(inspect.signature(model).parameters.keys())[1:], perr))
 
-
-    return popt, perr, pcov
+    return fit_lines, fit_lines_resid, coeff, coeff_err
 
 

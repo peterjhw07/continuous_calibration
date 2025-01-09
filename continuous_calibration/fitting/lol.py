@@ -27,8 +27,8 @@ def get_lol(conc, intensity, spec_name, intercept=False, get_lol="min", lol_test
     elif intercept:
         lol_columns += ['Intercept / ' + intensity_unit]
     lol_df = pd.DataFrame(index=spec_name, columns=lol_columns)
-    fit_lines_arr = np.empty(shape=(len(conc), len(spec_name)))
-    fit_resid_arr = np.empty(shape=(len(conc), len(spec_name)))
+    fit_lines = np.full((len(conc), len(spec_name)), None, dtype=object)
+    fit_resid = np.full((len(conc), len(spec_name)), None, dtype=object)
     lol_df["Species"] = spec_name
     for i in range(len(species_alt)):
         for limit in range(3, len(conc)):
@@ -54,8 +54,8 @@ def get_lol(conc, intensity, spec_name, intercept=False, get_lol="min", lol_test
 
         fit_res, fit_line = regression.lin_regress(conc[:, i], intensity[:, i],
                                                    lol_df.at[spec_name[i], "LOL"], intercept=intercept)
-        fit_lines_arr[:len(fit_line), i:i+1] = fit_line
-        fit_resid_arr[:len(fit_res.resid), i:i+1] = fit_res.resid.reshape(-1, 1)
+        fit_lines[:len(fit_line), i:i+1] = fit_line
+        fit_resid[:len(fit_res.resid), i:i+1] = fit_res.resid.reshape(-1, 1)
         if intercept:
             lol_df.at[spec_name[i], 'Gradient / ' + gradient_unit] = fit_res.params[1]
             lol_df.at[spec_name[i], 'Intercept / ' + intensity_unit] = fit_res.params[0]
@@ -65,12 +65,12 @@ def get_lol(conc, intensity, spec_name, intercept=False, get_lol="min", lol_test
                 lol_df.at[spec_name[i], 'Molar Extinction Coefficient / ' + mec_unit] = \
                     lol_df.at[spec_name[i], 'Gradient / ' + gradient_unit] / path_length
 
-    gradient = lol_df['Gradient / ' + gradient_unit].to_list()
     if intercept:
-        intercept = lol_df['Intercept / ' + intensity_unit].to_list()
+        coeff = {"m": lol_df['Gradient / ' + gradient_unit].to_list(),
+                 "c": lol_df['Intercept / ' + intensity_unit].to_list()}
         mec = None
     else:
-        intercept = None
+        coeff = {"m": lol_df['Gradient / ' + gradient_unit].to_list()}
         if path_length:
             mec = lol_df['Molar Extinction Coefficient / ' + mec_unit].to_list()
         else:
@@ -79,7 +79,7 @@ def get_lol(conc, intensity, spec_name, intercept=False, get_lol="min", lol_test
     if len(species_alt) == 1:
         lol_df = lol_df.drop(columns="Species")
 
-    return tests_df, lol_df, fit_lines_arr, fit_resid_arr, gradient, intercept, mec
+    return tests_df, lol_df, fit_lines, fit_resid, coeff, mec
 
 
 def try_except_test(indices, tests_df, species_alt, test, criterion, threshold=0.05):
