@@ -38,7 +38,7 @@ if __name__ == "__main__":
                          "time_unit", "conc_unit", "intensity_unit", "path_length_unit", "filename", "sheet_name",
                          "pic_save"]]
 
-    total = np.empty([len(input_df), 8], object)
+    total = np.empty([len(input_df), 7], object)
     for i in range(0, len(input_df)):
         [number, description, spec_name, t_col, col, mol0, vol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot,
          t_one_shot, sub_cont_rate, diffusion_delay, fit_eq, intercept, get_lol, path_length, win, inc, breakpoint_lim,
@@ -84,10 +84,10 @@ if __name__ == "__main__":
         if 'y' in export_fit_excel:
             cc.export_xlsx(export_df, gen_folder + 'CC_Fit_Results.xlsx', 'a', 'replace', str(number))
 
-        total[i] = [number, description, data.est_t_cont, data.lol, data.gradient, data.intercept, data.mec, time_taken]
+        total[i] = [number, description, data.est_t_cont, data.lol, data.coeff, data.mec, time_taken]
 
     if 'y' in export_param:
-        export_df = pd.DataFrame(total, columns=["Number", "Description", "Est. t_cont", "LOL", "Gradient", "Intercept",
+        export_df = pd.DataFrame(total, columns=["Number", "Description", "Estitmated t_cont", "LOL", "Coefficients",
                                                  "MEC", "script_runtime"])
         # "RSS", "R2", "R2_adj", "RMSE", "MAE", "AIC", "BIC",
         cc.export_xlsx(export_df, gen_folder + 'CC_Results.xlsx', 'a', 'new', date.today().strftime("%y%m%d"))

@@ -70,7 +70,7 @@ def fit_intensity_curve(conc, exp_intensity, fit_eq, intercept=False, p0=None):
         fit_lines[:, i] = model(conc[:, i], *popt_it)
         fit_lines_resid[:, i] = exp_intensity[:, i] - fit_lines[:, i]
 
-    FIX IT SO THAT ALL FIRST PARAMETERS ARE TOGETHER IN LIST, THEN SECOND, ETC. FOR EACH SPECIES
+    # FIX IT SO THAT ALL FIRST PARAMETERS ARE TOGETHER IN LIST, THEN SECOND, ETC. FOR EACH SPECIES
     coeff = dict(zip(list(inspect.signature(model).parameters.keys())[1:], popt))
     coeff_err = dict(zip(list(inspect.signature(model).parameters.keys())[1:], perr))
 

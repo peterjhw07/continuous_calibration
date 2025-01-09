@@ -1,6 +1,5 @@
 import numpy as np
 import pwlf
-import ruptures as rpt
 
 
 def get_breakpoints(t, intensity, t_cont, guesses=None, bounds=None):
