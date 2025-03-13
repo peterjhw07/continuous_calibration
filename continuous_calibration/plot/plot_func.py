@@ -1,5 +1,6 @@
 """General Plotting Functions"""
 
+import base64
 import numpy as np
 import matplotlib.pyplot as plt
 import io
@@ -33,7 +34,7 @@ def calc_y_lim(exp, fit, edge_adj):
 
 
 # Processes plotted data
-def plot_process(f_format, save_to, transparent):
+def plot_process(f_format, save_to, transparent, fig, return_fig=False, return_img=False):
 
     # Correct mimetype based on filetype (for displaying in browser)
     if f_format == 'svg':
@@ -56,4 +57,14 @@ def plot_process(f_format, save_to, transparent):
     # Save the figure to the temporary file-like object
     img = io.BytesIO()  # file-like object to hold image
     plt.savefig(img, format=f_format, transparent=transparent)
-    return img, mimetype
+
+    if return_fig:
+        return fig, fig.get_axes()
+    elif return_img:
+        plt.close()
+        img.seek(0)
+        return img, mimetype
+    else:
+        plt.close()
+        graph_url = base64.b64encode(img.getvalue()).decode()
+        return 'data:{};base64,{}'.format(mimetype, graph_url), mimetype

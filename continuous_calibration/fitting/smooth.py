@@ -19,8 +19,6 @@ def convol_smooth(conc, intensity, lower_lim, upper_lim, fit_line):
 
     y_conv = np.convolve(intensity[:, 0], y1, mode="same")
 
-    print(intensity[lower_lim:upper_lim, 0] - fit_line[lower_lim:upper_lim, 0])
-
     res = np.zeros((len(conc[:, 0]), 2))
     for i in range(2, len(conc[:, 0])):
         gradient, intercept, r_value, p_value, std_err = regression.lin_regress(intensity[:i, 0], conc[:i, 0])

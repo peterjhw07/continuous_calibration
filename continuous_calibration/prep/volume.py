@@ -81,9 +81,9 @@ def add_start_end_row(t, dvols, dvol, mol, vol, t_end, sub_cont_rate):
 
 
 # Finally calculate volume
-def calc_mol_vol(t, dmol, dvol, dsub, mol, vol, mol0, react_vol_init):
+def calc_mol_vol(t, dmol, dvol, dsub, mol, vol, mol0, vol0):
     mol[0] += mol0
-    vol[0] += react_vol_init
+    vol[0] += vol0
     for i in range(1, len(t)):
         dt = t[i] - t[i - 1]
         mol[i] += mol[i - 1] + (dmol[i - 1] + mol[i - 1] * dsub / vol[i - 1]) * dt
@@ -114,8 +114,8 @@ def get_mol_vol(t, cont_event):
     return mol, vol
 
 
-# calculate additions and subtractions of species
-def get_conc_events(t, num_spec, react_vol_init, mol0, add_sol_conc, add_cont_rate, t_cont,
+# Calculate additions and subtractions of species
+def get_conc_events(t, num_spec, vol0, mol0, add_sol_conc, add_cont_rate, t_cont,
                      add_one_shot, t_one_shot, sub_cont_rate):
 
     sub_cont_rate = abs(sub_cont_rate) if sub_cont_rate else 0
@@ -137,11 +137,10 @@ def get_conc_events(t, num_spec, react_vol_init, mol0, add_sol_conc, add_cont_ra
         if conc:
             dmol_cont[:, i] *= conc
 
-    mol_cont, vol_cont = calc_mol_vol(t_event, dmol_cont, dvol_cont, dsub_cont, mol_cont, vol_cont, mol0, react_vol_init)
+    mol_cont, vol_cont = calc_mol_vol(t_event, dmol_cont, dvol_cont, dsub_cont, mol_cont, vol_cont, mol0, vol0)
     cont_event = EventData(t_event, dmol_cont, dvol_cont, dsub_cont, mol_cont, vol_cont)
 
     mol, vol = get_mol_vol(t, cont_event)
     conc = mol / vol[:, None]
-    # print(mol, vol, conc)
 
     return conc, mol, vol

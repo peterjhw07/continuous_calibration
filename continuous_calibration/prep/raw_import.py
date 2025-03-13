@@ -20,6 +20,12 @@ def raw_import(filename, sheet_name='Sheet1', t_col=0, col=1):
     elif '.txt' in filename:
         df = pd.read_csv(filename)
         headers = list(pd.read_csv(filename).columns)
+    else:
+        try:
+            df = pd.read_excel(filename, sheet_name=sheet_name, engine='openpyxl', dtype=str)
+            headers = list(pd.read_excel(filename, sheet_name=sheet_name, engine='openpyxl').columns)
+        except Exception as e:
+            raise e
     if isinstance(col, int): col = [col]
     conv_col = [i for i in [t_col, *col] if i is not None]
     try:

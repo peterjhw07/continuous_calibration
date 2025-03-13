@@ -1,34 +1,32 @@
 """CC Fit Equations"""
 
-import inspect
-import math
 import numpy as np
 
 
 # Custom fit equation
-def fit_eq_custom(conc, A, k):
+def fit_eq_custom(intensity):
     print("Fit to a custom rate equation")
     return
 
 
 # Linear fit equation
-def fit_eq_lin(conc, m):
-    return m * conc
+def fit_eq_lin(intensity, m):
+    return intensity / m
 
 
 # Linear intercept fit equation
-def fit_eq_lin_int(conc, m, c):
-    return m * conc + c
+def fit_eq_lin_int(intensity, m, c):
+    return (intensity - c) / m
 
 
 # Exponential fit equation
-def fit_eq_exp(conc, A, k):
-    return A * (1 - np.exp(-k * conc))
+def fit_eq_exp(intensity, A, k):
+    return - np.log(1 - (intensity / A)) / k
 
 
 # Exponential intercept fit equation
-def fit_eq_exp_int(conc, A, k, c):
-    return A * (1 - np.exp(-k * conc)) + c
+def fit_eq_exp_int(intensity, A, k, c):
+    return - np.log(1 - ((intensity - c) / A)) / k
 
 
 # Map to get required fit equation

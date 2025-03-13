@@ -1,11 +1,11 @@
 """
 Continuous Calibration
-Continuous Calibration is a method for obtaining a calibration curve
-using a continuous addition of analyte to the measured solution.
+A method for obtaining a calibration curve using a continuous addition of analyte to the monitored solution.
 """
 
 # Imports
-from continuous_calibration.run import run
+from continuous_calibration.gen import gen
+from continuous_calibration.apply import apply
 from continuous_calibration.prep.raw_import import raw_import
 from continuous_calibration.prep.export import export_xlsx
 

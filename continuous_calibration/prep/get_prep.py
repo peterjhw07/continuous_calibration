@@ -1,28 +1,30 @@
+import pandas as pd
 import math
 import numpy as np
+from continuous_calibration.fitting import apply_eqs
 
 
 #
 def make_int_float_list(item):
     if isinstance(item, (int, float)):
-        item = [item]
-    return item
+        return [item]
+    else:
+        return item
 
 
 # Converts int and float into lists inside tuples
 def make_list_into_lists(item):
     if isinstance(item, (list, tuple)) and len(item) > 0 and isinstance(item[0], (int, float)):
         return [item]
+    else:
+        return item
 
 
-def process_input(spec_name, col, mol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot):
-    col, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot = \
-        map(make_int_float_list, [col, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot])
+# Process species input
+def process_spec_input(spec_name, col):
 
+    col = make_int_float_list(col)
     num_spec = len(col)
-
-    add_cont_rate, t_cont, add_one_shot, t_one_shot = \
-        map(make_list_into_lists, [add_cont_rate, t_cont, add_one_shot, t_one_shot])
 
     if spec_name is None:
         if num_spec == 1:
@@ -30,15 +32,76 @@ def process_input(spec_name, col, mol0, add_sol_conc, add_cont_rate, t_cont, add
         else:
             spec_name = ["Species " + i for i in range(1, num_spec + 1)]
 
-    if not mol0:
+    if len(spec_name) > 1:
+        species_alt = [spec + ' ' for spec in spec_name]
+    else:
+        species_alt = ['']
+
+    return spec_name, species_alt, num_spec, col
+
+
+# Process data input
+def process_data_input(df, num_spec, t_col, col):
+    if isinstance(df, pd.DataFrame):
+        data_arr = df.to_numpy()
+    elif isinstance(df, (int, float, list, tuple)):
+        if isinstance(df, (int, float)):
+            df = [df]
+        data_arr = np.zeros((len(df), num_spec))
+        data_arr[:, 0] = df
+    else:
+        data_arr = df
+    if t_col and isinstance(t_col, str):
+        t_col = df.columns.get_loc(t_col)
+    if col and isinstance(col, str):
+        col = df.columns.get_loc(col)
+    elif col and isinstance(col, (list, tuple)):
+        if isinstance(col[0], str):
+            col = [df.columns.get_loc(i) for i in col]
+    return data_arr, t_col, col
+
+
+def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot):
+
+    spec_name, species_alt, num_spec, col = process_spec_input(spec_name, col)
+    data_arr, t_col, col = process_data_input(df, num_spec, t_col, col)
+
+    add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot = \
+        map(make_int_float_list, [add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot])
+
+    add_cont_rate, t_cont, add_one_shot, t_one_shot = \
+        map(make_list_into_lists, [add_cont_rate, t_cont, add_one_shot, t_one_shot])
+
+    if mol0 is None:
+        mol0 = [None] * num_spec
+        mol0_temp = [0] * num_spec
+    elif isinstance(mol0, (list, tuple)):
+        mol0_temp = mol0.copy()
+        mol0_temp = [i if i is not None else 0 for i in mol0_temp]
+    elif isinstance(mol0, (int, float)) and mol0 == 0:
         mol0 = [0] * num_spec
+        mol0_temp = mol0
     else:
         mol0 = make_int_float_list(mol0)
+        mol0_temp = mol0
 
-    return spec_name, num_spec, col, mol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot
+    return data_arr, spec_name, species_alt, num_spec, t_col, col, mol0, mol0_temp, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot
 
 
-# smooth data (if required)
+def process_apply_input(df, spec_name, t_col, col, param):
+
+    spec_name, species_alt, num_spec, col = process_spec_input(spec_name, col)
+    data_arr, t_col, col = process_data_input(df, num_spec, t_col, col)
+
+    if isinstance(param, (list, tuple)) and len(param) > 0 and isinstance(param[0], (int, float)):
+        param = [param]
+    elif isinstance(param, (list, tuple)) and len(param) > 0 and isinstance(param[0], dict):
+        param = [list(p.values()) for p in param]
+
+    return data_arr, spec_name, species_alt, num_spec, t_col, col, param
+
+
+# Smooth data (if required)
 def data_smooth(arr, d_col, win=1, inc=1):
     if win <= 1:
         d_ra = arr[:, d_col]
@@ -52,6 +115,7 @@ def data_smooth(arr, d_col, win=1, inc=1):
     return d_ra
 
 
+# Average identical concentrations
 def avg_repeats(conc, intensity, zero=False):
     # Find unique values in each column of conc
     unique_conc, inverse_indices = np.unique(conc, axis=0, return_inverse=True)
@@ -82,6 +146,7 @@ def avg_repeats(conc, intensity, zero=False):
     return unique_conc, unique_intensity, error
 
 
+# Allow for delay due to diffusion
 def remove_diffusion_delay(data_org, t_col, t_one_shot, diffusion_delay):
     if t_one_shot and diffusion_delay:
         indices = []
@@ -89,3 +154,25 @@ def remove_diffusion_delay(data_org, t_col, t_one_shot, diffusion_delay):
             indices += np.where((data_org[:, t_col] >= t) & (data_org[:, t_col] < t + diffusion_delay))[0].tolist()
         data_org = np.delete(data_org, indices, axis=0)
     return data_org
+
+
+# Sort fitting equations
+def sort_fit_eq(fit_eq, intercept):
+    if "lin" in fit_eq.lower():
+        if intercept:
+            model = apply_eqs.fit_eq_map.get("Linear_intercept")
+        else:
+            model = apply_eqs.fit_eq_map.get("Linear")
+    elif "exp" in fit_eq.lower():
+        if intercept:
+            model = apply_eqs.fit_eq_map.get("Exponential_intercept")
+        else:
+            model = apply_eqs.fit_eq_map.get("Exponential")
+    elif "custom" in fit_eq.lower():
+        model = apply_eqs.fit_eq_map.get("Custom")
+    else:
+        try:
+            model = apply_eqs.fit_eq_map.get(fit_eq)
+        except:
+            print("Non-existent model name.")
+    return model

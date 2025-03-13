@@ -1,19 +1,8 @@
 """CC Linearity Tests"""
 
-import numpy as np
 from statsmodels.sandbox.stats.runs import runstest_1samp
-from scipy.stats import shapiro
 import statistics as stats
-import statsmodels.api as sm
 import statsmodels.stats.api as sms
-import statsmodels.regression.linear_model as smf
-from statsmodels.stats.diagnostic import het_breuschpagan
-from statsmodels.stats.diagnostic import kstest_normal
-
-
-def harvey_collier_test(model):
-    statistic, p_value = sms.linear_harvey_collier(model, skip=2)
-    return p_value
 
 
 def rainbow_test(model):
@@ -26,19 +15,8 @@ def runs_test(model):
     return p_value
 
 
-def breusch_pagan_lagrange(x, y, upper_lim):
-    model = smf.OLS(y[:upper_lim + 1], x[:upper_lim + 1]).fit()
-    statistic, p_value, _, _ = het_breuschpagan(model.resid, sm.add_constant(model.model.exog))
-    return p_value
-
-
-def kolmogorov_smirnov_test(residuals):
-    statistic, p_value = kstest_normal(residuals)
-    return p_value
-
-
-def shapiro_wilk_test(residuals):
-    statistic, p_value = shapiro(residuals - np.mean(residuals))
+def harvey_collier_test(model):
+    statistic, p_value = sms.linear_harvey_collier(model, skip=2)
     return p_value
 
 

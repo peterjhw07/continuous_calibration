@@ -25,13 +25,13 @@ sheet_name = 'Sheet1'
 
 df = cc.raw_import(filename, sheet_name=sheet_name, t_col=t_col, col=col)
 
-data = cc.run(df, t_col=t_col, col=col, mol0=mol0, vol0=vol0, add_sol_conc=add_sol_conc, add_cont_rate=add_cont_rate,
+data = cc.gen(df, t_col=t_col, col=col, mol0=mol0, vol0=vol0, add_sol_conc=add_sol_conc, add_cont_rate=add_cont_rate,
               t_cont=t_cont, add_one_shot=add_one_shot, t_one_shot=t_one_shot, sub_cont_rate=sub_cont_rate,
-              diffusion_delay=0, get_lol=get_lol)
+              diffusion_delay=0, lol_method=get_lol)
 
 data.plot_intensity_vs_time(f_format='png', save_to='intensity_vs_time.png')
 data.plot_intensity_vs_conc(f_format='png', save_to='intensity_vs_conc.png')
-# if get_lol:
-#    data.plot_lol_tests(f_format='png', save_to='lol_tests.png')
+if get_lol:
+    data.plot_lol_tests(f_format='png', save_to='lol_tests.png')
 
-cc.export_xlsx(data.proc_df, r'C:\Users\Peter\Documents\Postdoctorate_McIndoe\Work\CC\NT_24_06_24_test_output.xlsx')
+cc.export_xlsx(data.all_df, r'C:\Users\Peter\Documents\Postdoctorate_McIndoe\Work\CC\NT_24_06_24_test_output.xlsx')
