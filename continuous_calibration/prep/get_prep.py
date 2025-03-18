@@ -168,6 +168,11 @@ def sort_fit_eq(fit_eq, intercept):
             model = apply_eqs.fit_eq_map.get("Exponential_intercept")
         else:
             model = apply_eqs.fit_eq_map.get("Exponential")
+    elif "four" in fit_eq.lower():
+        if intercept:
+            model = apply_eqs.fit_eq_map.get("Fourier_intercept")
+        else:
+            model = apply_eqs.fit_eq_map.get("Fourier")
     elif "custom" in fit_eq.lower():
         model = apply_eqs.fit_eq_map.get("Custom")
     else:

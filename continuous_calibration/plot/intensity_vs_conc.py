@@ -1,6 +1,7 @@
 """CC Intensity vs. Concentration Plotting"""
 
 import matplotlib.pyplot as plt
+import numpy as np
 from continuous_calibration.plot.plot_func import plot_process
 
 
@@ -25,12 +26,12 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
             ax = axes[0]
         else:
             ax = axes
-        ax.scatter(conc, intensity, 8, 'k', label='Data')
-        if intensity_error is not None:
-            ax.errorbar(conc, intensity.flatten().tolist(), yerr=intensity_error.flatten().tolist(),
+        ax.scatter(conc, intensity[:, col], 8, 'k', label='Data')
+        if intensity_error[:, col] is not None and np.count_nonzero(intensity_error[:, col]) > 0.2 * intensity_error[:, col].size:
+            ax.errorbar(conc, intensity[:, col], yerr=intensity_error[:, col],
                               fmt='none', ecolor='k', capsize=5, capthick=1, elinewidth=1)
-        if smooth_intensity is not None:
-            ax.plot(conc, smooth_intensity, 'g', label='Smoothed Data')
+        if smooth_intensity[:, col] is not None:
+            ax.plot(conc, smooth_intensity[:, col], 'g', label='Smoothed Data')
         if fit_line is not None and limit is not None:
             ax.plot(conc[:limit[col] + 1, col], fit_line[:limit[col] + 1, col], 'r', label='Linear Fit')
             try:

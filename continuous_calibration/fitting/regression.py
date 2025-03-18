@@ -6,6 +6,7 @@ from scipy.stats import linregress
 import sklearn.metrics
 import statsmodels.api as sm
 from continuous_calibration.fitting import gen_eqs
+from continuous_calibration.prep import get_prep
 
 
 # Perform linear regression
@@ -42,23 +43,7 @@ def fit_intensity_curve(conc, exp_intensity, fit_eq, intercept=False, lol_idx=No
     """
 
     # Define the model function
-    if "lin" in fit_eq.lower():
-        if intercept:
-            model = gen_eqs.fit_eq_map.get("Linear_intercept")
-        else:
-            model = gen_eqs.fit_eq_map.get("Linear")
-    elif "exp" in fit_eq.lower():
-        if intercept:
-            model = gen_eqs.fit_eq_map.get("Exponential_intercept")
-        else:
-            model = gen_eqs.fit_eq_map.get("Exponential")
-    elif "custom" in fit_eq.lower():
-        model = gen_eqs.fit_eq_map.get("Custom")
-    else:
-        try:
-            model = gen_eqs.fit_eq_map.get(fit_eq)
-        except:
-            print("Non-existent model name.")
+    model = get_prep.sort_fit_eq(fit_eq, intercept)
 
     if not p0:
         if intercept:
@@ -75,8 +60,7 @@ def fit_intensity_curve(conc, exp_intensity, fit_eq, intercept=False, lol_idx=No
         lol_idx = [conc.shape[0]] * conc.shape[1]
     for i in range(conc.shape[1]):
         n = lol_idx[i]
-        popt_it, pcov_it = curve_fit(model, conc[:n, i],
-                                     exp_intensity[:n, i], p0=p0, maxfev=5000)
+        popt_it, pcov_it = curve_fit(model, conc[:n, i], exp_intensity[:n, i], p0=p0, maxfev=10000)
         # Calculate the standard errors (square root of the diagonal elements of the covariance matrix)
         perr_it = np.sqrt(np.diag(pcov_it))
         popt.append(popt_it)

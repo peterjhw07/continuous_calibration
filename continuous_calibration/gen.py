@@ -237,7 +237,10 @@ def gen(df, spec_name=None, t_col=0, col=1, mol0=0, vol0=None, add_sol_conc=[], 
 
     # Smooth data
     try:
-        data.sg_smooth = savgol_filter(data.avg_intensity[:, i], sg_win, 1)
+        sg_smooth = np.zeros(data.avg_intensity.shape)
+        for i in range(data.avg_intensity.shape[1]):
+            sg_smooth[:, i] = savgol_filter(data.avg_intensity[:, i], sg_win, 1)
+        data.sg_smooth = sg_smooth
     except:
         data.sg_smooth = None
 
@@ -270,7 +273,7 @@ def gen(df, spec_name=None, t_col=0, col=1, mol0=0, vol0=None, add_sol_conc=[], 
         model = get_prep.sort_fit_eq(fit_eq, intercept)
         for i in range(num_spec):
             if mol0[i] is None:
-                mol0_temp[i] = -model(0, *[item for sublist in data.params.values() for item in sublist]) * vol0
+                mol0_temp[i] = -model(0, *list(data.params[i].values())) * vol0
             data.mol0_fit = mol0_temp
         data = raw_data_process(data, mol0_temp)
     else:
