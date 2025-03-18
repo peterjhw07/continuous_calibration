@@ -1,7 +1,7 @@
 import pandas as pd
 import math
 import numpy as np
-from continuous_calibration.fitting import apply_eqs
+from continuous_calibration.fitting import gen_eqs, apply_eqs
 
 
 #
@@ -157,27 +157,31 @@ def remove_diffusion_delay(data_org, t_col, t_one_shot, diffusion_delay):
 
 
 # Sort fitting equations
-def sort_fit_eq(fit_eq, intercept):
+def sort_fit_eq(fit_eq, intercept, fit_type='gen'):
+    if 'gen' in fit_type.lower():
+        eqs = gen_eqs
+    else:
+        eqs = apply_eqs
     if "lin" in fit_eq.lower():
         if intercept:
-            model = apply_eqs.fit_eq_map.get("Linear_intercept")
+            model = eqs.fit_eq_map.get("Linear_intercept")
         else:
-            model = apply_eqs.fit_eq_map.get("Linear")
+            model = eqs.fit_eq_map.get("Linear")
     elif "exp" in fit_eq.lower():
         if intercept:
-            model = apply_eqs.fit_eq_map.get("Exponential_intercept")
+            model = eqs.fit_eq_map.get("Exponential_intercept")
         else:
-            model = apply_eqs.fit_eq_map.get("Exponential")
+            model = eqs.fit_eq_map.get("Exponential")
     elif "four" in fit_eq.lower():
         if intercept:
-            model = apply_eqs.fit_eq_map.get("Fourier_intercept")
+            model = eqs.fit_eq_map.get("Fourier_intercept")
         else:
-            model = apply_eqs.fit_eq_map.get("Fourier")
+            model = eqs.fit_eq_map.get("Fourier")
     elif "custom" in fit_eq.lower():
-        model = apply_eqs.fit_eq_map.get("Custom")
+        model = eqs.fit_eq_map.get("Custom")
     else:
         try:
-            model = apply_eqs.fit_eq_map.get(fit_eq)
+            model = eqs.fit_eq_map.get(fit_eq)
         except:
             print("Non-existent model name.")
     return model

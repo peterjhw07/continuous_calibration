@@ -270,9 +270,10 @@ def gen(df, spec_name=None, t_col=0, col=1, mol0=0, vol0=None, add_sol_conc=[], 
         data.rmse, data.mae, data.r2, data.r2_adj, data.aic, data.bic = None, None, None, None, None, None
 
     if None in mol0:
-        model = get_prep.sort_fit_eq(fit_eq, intercept)
+        model = get_prep.sort_fit_eq(fit_eq, intercept, fit_type='apply')
         for i in range(num_spec):
             if mol0[i] is None:
+                print(list(data.params[i].values()))
                 mol0_temp[i] = -model(0, *list(data.params[i].values())) * vol0
             data.mol0_fit = mol0_temp
         data = raw_data_process(data, mol0_temp)

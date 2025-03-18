@@ -43,7 +43,7 @@ def fit_intensity_curve(conc, exp_intensity, fit_eq, intercept=False, lol_idx=No
     """
 
     # Define the model function
-    model = get_prep.sort_fit_eq(fit_eq, intercept)
+    model = get_prep.sort_fit_eq(fit_eq, intercept, fit_type='gen')
 
     if not p0:
         if intercept:
@@ -51,7 +51,6 @@ def fit_intensity_curve(conc, exp_intensity, fit_eq, intercept=False, lol_idx=No
             p0.append(0.0)
         else:
             p0 = [1.0] * (len(inspect.signature(model).parameters) - 1)
-
 
     # Perform the curve fitting
     popt, perr, coeff, coeff_err = [], [], [], []
