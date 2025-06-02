@@ -17,7 +17,7 @@ def raw_import(filename, sheet_name='Sheet1', t_col=0, col=1):
     if '.xlsx' in filename:
         df = pd.read_excel(filename, sheet_name=sheet_name, engine='openpyxl', dtype=str)
         headers = list(pd.read_excel(filename, sheet_name=sheet_name, engine='openpyxl').columns)
-    elif '.txt' in filename:
+    elif '.csv' in filename or '.txt' in filename:
         df = pd.read_csv(filename)
         headers = list(pd.read_csv(filename).columns)
     else:
