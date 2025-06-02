@@ -28,9 +28,9 @@ def process_spec_input(spec_name, col):
 
     if spec_name is None:
         if num_spec == 1:
-            spec_name = [""]
+            spec_name = ['']
         else:
-            spec_name = ["Species " + i for i in range(1, num_spec + 1)]
+            spec_name = ['Species ' + i for i in range(1, num_spec + 1)]
 
     if len(spec_name) > 1:
         species_alt = [spec + ' ' for spec in spec_name]
@@ -61,13 +61,14 @@ def process_data_input(df, num_spec, t_col, col):
     return data_arr, t_col, col
 
 
-def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot):
+def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot,
+                      fit_lim):
 
     spec_name, species_alt, num_spec, col = process_spec_input(spec_name, col)
     data_arr, t_col, col = process_data_input(df, num_spec, t_col, col)
 
-    add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot = \
-        map(make_int_float_list, [add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot])
+    add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot, fit_lim = \
+        map(make_int_float_list, [add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot, fit_lim])
 
     add_cont_rate, t_cont, add_one_shot, t_one_shot = \
         map(make_list_into_lists, [add_cont_rate, t_cont, add_one_shot, t_one_shot])
@@ -76,16 +77,16 @@ def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, add_cont_ra
         mol0 = [None] * num_spec
         mol0_temp = [0] * num_spec
     elif isinstance(mol0, (list, tuple)):
-        mol0_temp = mol0.copy()
-        mol0_temp = [i if i is not None else 0 for i in mol0_temp]
+        mol0_temp = [i if i is not None else 0 for i in mol0]
     elif isinstance(mol0, (int, float)) and mol0 == 0:
         mol0 = [0] * num_spec
-        mol0_temp = mol0
+        mol0_temp = mol0.copy()
     else:
         mol0 = make_int_float_list(mol0)
-        mol0_temp = mol0
+        mol0_temp = mol0.copy()
 
-    return data_arr, spec_name, species_alt, num_spec, t_col, col, mol0, mol0_temp, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot
+    return (data_arr, spec_name, species_alt, num_spec, t_col, col, mol0, mol0_temp,
+            add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot, fit_lim)
 
 
 def process_apply_input(df, spec_name, t_col, col, param):
@@ -162,26 +163,41 @@ def sort_fit_eq(fit_eq, intercept, fit_type='gen'):
         eqs = gen_eqs
     else:
         eqs = apply_eqs
-    if "lin" in fit_eq.lower():
+    if 'lin' in fit_eq.lower():
         if intercept:
-            model = eqs.fit_eq_map.get("Linear_intercept")
+            model = eqs.fit_eq_map.get('Linear_intercept')
         else:
-            model = eqs.fit_eq_map.get("Linear")
-    elif "exp" in fit_eq.lower():
+            model = eqs.fit_eq_map.get('Linear')
+    elif 'log' in fit_eq.lower():
         if intercept:
-            model = eqs.fit_eq_map.get("Exponential_intercept")
+            model = eqs.fit_eq_map.get('Logarithmic_intercept')
         else:
-            model = eqs.fit_eq_map.get("Exponential")
-    elif "four" in fit_eq.lower():
+            model = eqs.fit_eq_map.get('Logarithmic')
+    elif 'exp' in fit_eq.lower():
         if intercept:
-            model = eqs.fit_eq_map.get("Fourier_intercept")
+            model = eqs.fit_eq_map.get('Exponential_intercept')
         else:
-            model = eqs.fit_eq_map.get("Fourier")
-    elif "custom" in fit_eq.lower():
-        model = eqs.fit_eq_map.get("Custom")
+            model = eqs.fit_eq_map.get('Exponential')
+    elif 'tan' in fit_eq.lower():
+        if intercept:
+            model = eqs.fit_eq_map.get('Tangent_intercept')
+        else:
+            model = eqs.fit_eq_map.get('Tangent')
+    elif 'mich' in fit_eq.lower() or 'mm' in fit_eq.lower():
+        if intercept:
+            model = eqs.fit_eq_map.get('Michaelis-Menten_intercept')
+        else:
+            model = eqs.fit_eq_map.get('Michaelis-Menten')
+    elif 'lang' in fit_eq.lower():
+        if intercept:
+            model = eqs.fit_eq_map.get('Langmuir_intercept')
+        else:
+            model = eqs.fit_eq_map.get('Langmuir')
+    elif 'custom' in fit_eq.lower():
+        model = eqs.fit_eq_map.get('Custom')
     else:
         try:
             model = eqs.fit_eq_map.get(fit_eq)
         except:
-            print("Non-existent model name.")
+            print('Non-existent model name.')
     return model

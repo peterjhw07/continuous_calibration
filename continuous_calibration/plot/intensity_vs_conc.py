@@ -2,12 +2,12 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from continuous_calibration.plot.plot_func import plot_process
+from continuous_calibration.plot.plot_func import plot_process, calc_mono_lim, calc_multi_lim
 
 
 def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_error=None, limit=None, fit_line=None,
-                           resid=None, xlim=None, conc_unit="moles_unit volume_unit^-1",
-                           intensity_unit="AU", f_format='svg', save_to='', return_fig=False, return_img=False,
+                           resid=None, xlim=None, conc_unit='moles_unit volume_unit^-1',
+                           intensity_unit='AU', f_format='svg', save_to='', return_fig=False, return_img=False,
                            transparent=False, font_size=12):
 
     num_spec = conc.shape[1]
@@ -18,6 +18,7 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
         fig, axes = plt.subplots(nrows=1, ncols=num_spec, figsize=(num_spec * 6, 5))
 
     for col in range(num_spec):
+        y_data = []
         if num_spec > 1 and resid is not None:
             ax = axes[0, col]
         elif num_spec > 1 and not resid is not None:
@@ -27,24 +28,31 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
         else:
             ax = axes
         ax.scatter(conc, intensity[:, col], 8, 'k', label='Data')
-        if intensity_error[:, col] is not None and np.count_nonzero(intensity_error[:, col]) > 0.2 * intensity_error[:, col].size:
+        y_data.append(intensity[:, col])
+        if (intensity_error is not None and intensity_error[:, col] is not None and
+                np.count_nonzero(intensity_error[:, col]) > 0.2 * intensity_error[:, col].size):
             ax.errorbar(conc, intensity[:, col], yerr=intensity_error[:, col],
                               fmt='none', ecolor='k', capsize=5, capthick=1, elinewidth=1)
-        if smooth_intensity[:, col] is not None:
+            y_data.append(intensity[:, col] + intensity_error[:, col])
+        if smooth_intensity is not None and smooth_intensity[:, col] is not None:
             ax.plot(conc, smooth_intensity[:, col], 'g', label='Smoothed Data')
+            y_data.append(smooth_intensity[:, col])
         if fit_line is not None and limit is not None:
-            ax.plot(conc[:limit[col] + 1, col], fit_line[:limit[col] + 1, col], 'r', label='Linear Fit')
+            ax.plot(conc[:limit[col] + 1, col], fit_line[:limit[col] + 1, col], 'r', label='Fit')
+            # ax.plot(conc[:, col], fit_line[:, col], 'r', label='Fit')
+            y_data.append(fit_line[:limit[col] + 1, col])
             try:
-                ax.axvline(x=conc[limit, col], color='b', linestyle='--', label='Limit of Linearity')
+                ax.axvline(x=conc[limit, col], color='b', linestyle='--', label='Limit of Fitting')
             except:
                 pass
         elif fit_line is not None:
             ax.plot(conc[:, col], fit_line[:, col], 'r', label='Fit')
+            y_data.append(fit_line[:, col])
         if not xlim:
-            ax.set_xlim([min(conc[:, col]), max(conc[:, col])])
+            ax.set_xlim(calc_mono_lim(conc[:, col], edge_adj=0))
+            ax.set_ylim(calc_multi_lim(y_data))
         else:
-            ax.set_xlim(xlim)
-        # ax_upper.set_ylim([-10, 50])
+            ax.set_xlim(xlim, edge_adj=0)
         ax.set_xlabel('Conc. / ' + conc_unit, fontsize=font_size)
         ax.set_ylabel('Intensity / ' + intensity_unit, fontsize=font_size)
         if resid is not None:
@@ -55,23 +63,27 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
         ax.legend(loc='lower right', fontsize=font_size, frameon=False)
 
         if resid is not None:
+            y_data = []
             if num_spec > 1 and resid is not None:
                 ax = axes[1, col]
             else:
                 ax = axes[1]
             if limit:
                 ax.scatter(conc[:limit[col] + 1, col], resid[:limit[col] + 1, col], 8, 'k', label='Residuals')
+                y_data.append(resid[:limit[col] + 1, col])
                 try:
-                    ax.axvline(x=conc[limit[col], col], color='b', linestyle='--', label='Limit of Linearity')
+                    ax.axvline(x=conc[limit[col], col], color='b', linestyle='--', label='Limit of Fitting')
                 except:
                     pass
             else:
                 ax.scatter(conc[:, col], resid[:, col], 8, 'k', label='Residuals')
+                y_data.append(resid[:, col])
             #if intensity_error is not None:
             #    ax.errorbar(conc, intensity.flatten().tolist(), yerr=intensity_error.flatten().tolist(),
             #                fmt='none', ecolor='k', capsize=5, capthick=1, elinewidth=1)
             if not xlim:
-                ax.set_xlim([min(conc[:, col]), max(conc[:, col])])
+                ax.set_xlim(calc_mono_lim(conc[:, col], edge_adj=0))
+                ax.set_ylim(calc_multi_lim(y_data))
             else:
                 ax.set_xlim(xlim)
             ax.set_xlabel('Conc. / ' + conc_unit, fontsize=font_size)

@@ -30,7 +30,7 @@ def raw_import(filename, sheet_name='Sheet1', t_col=0, col=1):
     conv_col = [i for i in [t_col, *col] if i is not None]
     try:
         for i in conv_col:
-            df[headers[i]] = pd.to_numeric(df[headers[i]], downcast="float")
+            df[headers[i]] = pd.to_numeric(df[headers[i]], downcast='float')
         return df
     except ValueError:
-        raise ValueError("Excel file must contain data rows (i.e. col specified) of numerical input with at most 1 header row.")
+        raise ValueError('Excel file must contain data rows (i.e. col specified) of numerical input with at most 1 header row.')

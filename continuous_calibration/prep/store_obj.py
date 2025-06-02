@@ -1,12 +1,13 @@
 import pandas as pd
 from continuous_calibration.apply import apply
-from continuous_calibration.plot import plot_conc_vs_time, plot_intensity_vs_time, plot_intensity_vs_conc, plot_lol_tests
+from continuous_calibration.plot import plot_conc_vs_time, plot_intensity_vs_time, plot_intensity_vs_conc, plot_lof_test
 
 
 # Generated data object
 class GenData:
-    def __init__(self, spec_name, num_spec, mol0, t_one_shot, t, intensity, fit_eq, intercept, lol_method,
-                 p_thresh, breakpoint_lim, diffusion_delay, time_unit, conc_unit, intensity_unit, path_length_unit):
+    def __init__(self, spec_name, num_spec, mol0, t_one_shot, t, intensity, fit_eq, intercept, lof_method,
+                 p_thresh, breakpoint_lim, diffusion_delay, time_unit, conc_unit, intensity_unit, path_length_unit,
+                 sg_win, win, inc):
         self.spec_name = spec_name
         self.num_spec = num_spec
         self.mol0 = mol0
@@ -15,7 +16,7 @@ class GenData:
         self.intensity = intensity
         self.fit_eq = fit_eq
         self.intercept = intercept
-        self.lol_method = lol_method
+        self.lof_method = lof_method
         self.p_thresh = p_thresh
         self.breakpoint_lim = breakpoint_lim
         self.diffusion_delay = diffusion_delay
@@ -24,38 +25,42 @@ class GenData:
         self.intensity_unit = intensity_unit
         self.path_length_unit = path_length_unit
 
-    # Add fitted data
-    def add_fit(self, t_df, fit_conc_df, fit_rate_df, temp_df, all_df):
-        self.t_df = t_df
-        self.fit_conc_df = fit_conc_df
-        self.fit_rate_df = fit_rate_df
-        self.temp_df = temp_df
-        self.all_df = all_df
+        self.sg_win = sg_win
+        self.win = win
+        self.inc = inc
+        self.est_t_cont = None
+
+        self.avg_conc, self.avg_intensity, self.error = None, None, None
+
+        self.smooth_intensity, self.smooth_model, self.smooth_intercept = None, None, None
+        self.fit, self.resid, self.params, self.param_err = None, None, None, None
+        self.mec, self.mol0_fit, self.lof_idx, self.lof, self.indices, self.test = None, None, None, None, None, None
+        self.rss, self.rmse, self.mae, self.r2, self.r2_adj, self.aic, self.bic = None, None, None, None, None, None, None
+
+        self.conc_df, self.intensity_df, self.error_df = None, None, None
+        self.smooth_intensity_df, self.fit_df, self.resid_df, self.all_df = None, None, None, None
 
     # Object link for simple plotting
-    def apply(self, df, col=0, t_col=None, calib=None, sg_win=1, win=1, inc=1):
-        if calib and "data" in calib.lower():
-            calib_df = self.intensity_df
-        elif calib and ("sg" in calib.lower() or "sav" in calib.lower()):
-            calib_df = self.sg_smooth_intensity_df
-        elif self.fit_eq is None:
-            if hasattr(self, "sg_smooth_intensity_df"):
-                calib_df = self.sg_smooth_intensity_df
-            else:
-                calib_df = self.intensity_df
+    def apply(self, df, col=0, t_col=None, calib='', calib_win=1, sg_win=1, win=1, inc=1):
+        if self.smooth_intensity is not None and 'data' not in calib.lower():
+            intensity = self.smooth_intensity_df
         else:
+            intensity = self.intensity_df
+        calib_df = pd.concat([self.conc_df, intensity], axis=1)
+        conc_col = list(range(self.num_spec))
+        intensity_col = list(range(self.num_spec, 2 * self.num_spec))
+        if 'data' in calib.lower() or 'smooth' in calib.lower():
+            fit_eq = None
+        elif 'fit' in calib.lower():
             calib_df = None
-        if calib_df is not None:
-            conc_col = list(range(len(calib_df.shape[0])))
-            intensity_col = list(range(len(conc_col), 2 * len(conc_col)))
-            calib_df = pd.concat([self.conc_df, calib_df], axis=1)
+            fit_eq = self.fit_eq
         else:
-            conc_col, intensity_col = None, None
+            fit_eq = self.fit_eq
 
         apply_data = apply(df, spec_name=self.spec_name, col=col, t_col=t_col, calib_df=calib_df, conc_col=conc_col,
-                           intensity_col=intensity_col, fit_eq=self.fit_eq, params=self.params, sg_win=sg_win, win=win,
-                           inc=inc, conc_unit="moles_unit volume_unit$^{-1}$", intensity_unit="AU",
-                           time_unit="time_unit")
+                           intensity_col=intensity_col, fit_eq=fit_eq, params=self.params, calib_win=calib_win,
+                           sg_win=sg_win, win=win, inc=inc, conc_unit='moles_unit volume_unit$^{-1}$',
+                           intensity_unit='AU', time_unit='time_unit')
         return apply_data
 
     # Object link for simple plotting
@@ -68,7 +73,7 @@ class GenData:
                                                transparent=transparent)
         return img, mimetype
 
-    def plot_intensity_vs_conc(self, conc_unit="", f_format='svg', save_to='cc_intensity_vs_conc.svg',
+    def plot_intensity_vs_conc(self, conc_unit='', f_format='svg', save_to='cc_intensity_vs_conc.svg',
                                plot_resid=False, return_fig=False, return_img=False, transparent=False):
         if not conc_unit:
             conc_unit = self.conc_unit
@@ -76,21 +81,20 @@ class GenData:
             resid = self.resid
         else:
             resid = None
-        img, mimetype = plot_intensity_vs_conc(self.avg_conc, self.avg_intensity, smooth_intensity=self.sg_smooth,
-                                               intensity_error=self.error, limit=self.lol_idx, fit_line=self.fit,
+        img, mimetype = plot_intensity_vs_conc(self.avg_conc, self.avg_intensity, smooth_intensity=self.smooth_intensity,
+                                               intensity_error=self.error, limit=self.lof_idx, fit_line=self.fit,
                                                resid=resid, conc_unit=conc_unit, intensity_unit=self.intensity_unit,
                                                f_format=f_format, save_to=save_to, return_fig=return_fig,
                                                return_img=return_img, transparent=transparent)
         return img, mimetype
 
-    def plot_lol_tests(self, conc_unit="", f_format='svg', save_to='cc_lol_tests.svg',
-                       return_fig=False, return_img=False, transparent=False):
+    def plot_lof_test(self, conc_unit='', f_format='svg', save_to='cc_lof_test.svg',
+                      return_fig=False, return_img=False, transparent=False):
         if not conc_unit:
             conc_unit = self.conc_unit
-        img, mimetype = plot_lol_tests(self.avg_conc, self.lol_tests_df, self.p_thresh,
-                                       conc_unit=conc_unit,
-                                       intensity_unit=self.intensity_unit, f_format=f_format, save_to=save_to,
-                                       return_fig=return_fig, return_img=return_img, transparent=transparent)
+        img, mimetype = plot_lof_test(self.avg_conc[self.indices, :], self.test, self.p_thresh, conc_unit=conc_unit,
+                                      intensity_unit=self.intensity_unit, f_format=f_format, save_to=save_to,
+                                      return_fig=return_fig, return_img=return_img, transparent=transparent)
         return img, mimetype
 
 

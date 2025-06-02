@@ -13,20 +13,23 @@ np.seterr(divide='ignore', invalid='ignore')
 
 
 # Calculates limits from data
-def calc_lim(lower_lim, upper_lim, edge_adj):
+def calc_lim(lower_lim, upper_lim, edge_adj=0.02):
     return [float(lower_lim - (edge_adj * (upper_lim - lower_lim))),
             float(upper_lim + (edge_adj * (upper_lim - lower_lim)))]
 
 
-# Calculates x limits from x data
-def calc_x_lim(t, edge_adj):
-    return calc_lim(min(t), max(t), edge_adj)
+# Calculates mono limits from mono data
+def calc_mono_lim(axis, edge_adj=0.02):
+    return calc_lim(min(axis), max(axis), edge_adj)
 
 
-# Calculates y limits from y data
-def calc_y_lim(exp, fit, edge_adj):
-    lower_lim = min(np.nanmin(exp), np.nanmin(fit))
-    upper_lim = max(np.nanmax(exp), np.nanmax(fit))
+# Calculates multi limits from multi data
+def calc_multi_lim(data, edge_adj=0.02):
+    lower_lim = np.inf
+    upper_lim = -np.inf
+    for datum in data:
+        lower_lim = min(lower_lim, np.nanmin(datum))
+        upper_lim = max(upper_lim, np.nanmax(datum))
     if lower_lim != upper_lim:
         return calc_lim(lower_lim, upper_lim, edge_adj)
     else:
