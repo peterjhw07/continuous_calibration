@@ -10,7 +10,9 @@ The code can be downloaded as a package for offline use using the conventional g
 
 ## Usage
 
-Tutorial videos on usage are a work in progress.
+Various examples uses of continuous_calibration are featured under "examples". Tutorial videos on usage are a work in progress.
+
+Use help(function) for documentation for the principle functions below.
 
 ### Principle functions
 
