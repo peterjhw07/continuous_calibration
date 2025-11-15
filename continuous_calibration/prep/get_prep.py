@@ -1,10 +1,12 @@
+"""CC General Data Preparation"""
+
 import pandas as pd
 import math
 import numpy as np
 from continuous_calibration.fitting import gen_eqs, apply_eqs
 
 
-#
+# Converts int and float to list
 def make_int_float_list(item):
     if isinstance(item, (int, float)):
         return [item]
@@ -61,17 +63,18 @@ def process_data_input(df, num_spec, t_col, col):
     return data_arr, t_col, col
 
 
-def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot,
-                      fit_lim):
+# Process generation input
+def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, cont_add_rate, t_cont_add, disc_add_vol,
+                      t_disc_add, fit_lim):
 
     spec_name, species_alt, num_spec, col = process_spec_input(spec_name, col)
     data_arr, t_col, col = process_data_input(df, num_spec, t_col, col)
 
-    add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot, fit_lim = \
-        map(make_int_float_list, [add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot, fit_lim])
+    add_sol_conc, cont_add_rate, t_cont_add, disc_add_vol, t_disc_add, fit_lim = \
+        map(make_int_float_list, [add_sol_conc, cont_add_rate, t_cont_add, disc_add_vol, t_disc_add, fit_lim])
 
-    add_cont_rate, t_cont, add_one_shot, t_one_shot = \
-        map(make_list_into_lists, [add_cont_rate, t_cont, add_one_shot, t_one_shot])
+    cont_add_rate, t_cont_add, disc_add_vol, t_disc_add = \
+        map(make_list_into_lists, [cont_add_rate, t_cont_add, disc_add_vol, t_disc_add])
 
     if mol0 is None:
         mol0 = [None] * num_spec
@@ -86,9 +89,10 @@ def process_gen_input(df, spec_name, t_col, col, mol0, add_sol_conc, add_cont_ra
         mol0_temp = mol0.copy()
 
     return (data_arr, spec_name, species_alt, num_spec, t_col, col, mol0, mol0_temp,
-            add_sol_conc, add_cont_rate, t_cont, add_one_shot, t_one_shot, fit_lim)
+            add_sol_conc, cont_add_rate, t_cont_add, disc_add_vol, t_disc_add, fit_lim)
 
 
+# Process application input
 def process_apply_input(df, spec_name, t_col, col, param):
 
     spec_name, species_alt, num_spec, col = process_spec_input(spec_name, col)
@@ -100,6 +104,18 @@ def process_apply_input(df, spec_name, t_col, col, param):
         param = [list(p.values()) for p in param]
 
     return data_arr, spec_name, species_alt, num_spec, t_col, col, param
+
+
+# Adjusts DataFrame and axis titles
+def units_adjust(units):
+    if not isinstance(units, list):
+        units = [units]
+    for i in range(len(units)):
+        if units[i]:
+            units[i] = ' / ' + units[i]
+        else:
+            units[i] = ''
+    return units
 
 
 # Smooth data (if required)
@@ -124,34 +140,34 @@ def avg_repeats(conc, intensity, zero=False):
     # Initialize arrays to store the sums and counts for averaging
     sums = np.zeros_like(unique_conc, dtype=float)
     counts = np.zeros_like(unique_conc, dtype=int)
-    error = np.zeros_like(unique_conc, dtype=float)
+    std = np.zeros_like(unique_conc, dtype=float)
 
     # Accumulate sums and counts for each unique row in conc
     np.add.at(sums, inverse_indices, intensity)
     np.add.at(counts, inverse_indices, 1)
 
     # Avoid division by zero and calculate the average
-    unique_intensity = sums / counts.astype(float)
-    unique_intensity[np.isnan(unique_intensity)] = 0
+    unique_average_intensity = sums / counts.astype(float)
+    unique_average_intensity[np.isnan(unique_average_intensity)] = 0
 
     if zero:
-        zero_shift = unique_intensity[0]
-        unique_intensity -= zero_shift
+        zero_shift = unique_average_intensity[0, :].flatten()
+        unique_average_intensity -= zero_shift
     else:
         zero_shift = 0
 
     # Calculate standard deviation of unique concentrations
-    np.add.at(error, inverse_indices, ((intensity - zero_shift) - unique_intensity[inverse_indices]) ** 2)
-    error = np.sqrt(error / counts.astype(float))
+    np.add.at(std, inverse_indices, ((intensity - zero_shift) - unique_average_intensity[inverse_indices]) ** 2)
+    std = np.sqrt(std / counts.astype(float))
 
-    return unique_conc, unique_intensity, error
+    return unique_conc, unique_average_intensity, std
 
 
 # Allow for delay due to diffusion
-def remove_diffusion_delay(data_org, t_col, t_one_shot, diffusion_delay):
-    if t_one_shot and diffusion_delay:
+def remove_diffusion_delay(data_org, t_col, t_disc_add, diffusion_delay):
+    if t_disc_add and diffusion_delay:
         indices = []
-        for t in t_one_shot[0]:
+        for t in t_disc_add[0]:
             indices += np.where((data_org[:, t_col] >= t) & (data_org[:, t_col] < t + diffusion_delay))[0].tolist()
         data_org = np.delete(data_org, indices, axis=0)
     return data_org

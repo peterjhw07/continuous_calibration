@@ -39,12 +39,12 @@ def fit_eq_exp_int(conc, a, b, c):
     return a * (1 - np.exp(-b * conc)) + c
 
 
-# Tan fit equation
+# Tangential fit equation
 def fit_eq_tan(conc, a, b):
     return a * np.arctan(b * conc)
 
 
-# Tan intercept fit equation
+# Tangential intercept fit equation
 def fit_eq_tan_int(conc, a, b, c):
     return a * np.arctan(b * conc) + c
 

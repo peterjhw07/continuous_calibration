@@ -1,8 +1,8 @@
 # Continuous Calibration
 
-Continuous Calibration (continuous_calibration) is a Pythonic code for processing experimental continuous calibration data. The code is also implemented in a web application: http://www.catacycle.com/continuous_calibration.
+Continuous Calibration (continuous_calibration) is a Pythonic code for processing experimental continuous calibration data. The code is also implemented in a web application: http://www.catacycle.com/cc.
 
-A manuscript describing the code and its applications is pre-printed at DOI:XXX. Please cite this manuscript should this code be used in your work.
+A manuscript describing the code and its applications is pre-printed at DOI:10.26434/chemrxiv-2025-409m2. Please cite this manuscript should this code be used in your work.
 
 ## Installation
 
@@ -10,7 +10,7 @@ The code can be downloaded as a package for offline use using the conventional g
 
 ## Usage
 
-Tutorial videos on usage are a working progress.
+Tutorial videos on usage are a work in progress.
 
 ### Principle functions
 

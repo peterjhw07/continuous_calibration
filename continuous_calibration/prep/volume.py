@@ -1,4 +1,5 @@
-import copy
+"""CC Volume Calculations"""
+
 import numpy as np
 
 
@@ -34,41 +35,41 @@ def prepare_add(num_spec, add, t):
 
 
 # Get continuous events and add discrete events
-def get_cont_add_disc(num_spec, add_cont_rate, t_cont, event_t_disc, dmol_disc, dvol_disc, sub_cont_rate):
-    t_cont, dvols_cont, dvol_cont = prepare_add(num_spec, add_cont_rate, t_cont)
-    t_cont_add, dvols_cont_add, dvol_cont_add = t_cont, dvols_cont, dvol_cont
+def get_cont_add_disc(num_spec, cont_add_rate, t_cont_add, event_t_disc, dmol_disc, dvol_disc, cont_sub_rate):
+    t_cont, dvols_cont, dvol_cont = prepare_add(num_spec, cont_add_rate, t_cont_add)
+    t_cont_add_add, dvols_cont_add, dvol_cont_add = t_cont, dvols_cont, dvol_cont
     mol_cont_add, vol_cont_add = np.zeros((len(t_cont), num_spec)), np.zeros(len(t_cont))
 
     for i, j in enumerate(event_t_disc):
         if j in t_cont:
-            mol_cont_add[t_cont_add == j] += dmol_disc[i]
-            vol_cont_add[t_cont_add == j] += dvol_disc[i]
+            mol_cont_add[t_cont_add_add == j] += dmol_disc[i]
+            vol_cont_add[t_cont_add_add == j] += dvol_disc[i]
         else:
             if len(t_cont[t_cont < j]) > 0:
                 row_find = t_cont < j
-                t_cont_add = np.append(t_cont_add, j)
+                t_cont_add_add = np.append(t_cont_add_add, j)
                 dvols_cont_add = np.vstack((dvols_cont_add, dvols_cont[row_find][-1]))
                 dvol_cont_add = np.append(dvol_cont_add, dvol_cont[row_find][-1])
                 mol_cont_add = np.vstack((mol_cont_add, dmol_disc[i]))
                 vol_cont_add = np.append(vol_cont_add, dvol_disc[i])
             else:
-                t_cont_add = np.append(t_cont_add, j)
+                t_cont_add_add = np.append(t_cont_add_add, j)
                 dvols_cont_add = np.vstack((dvols_cont_add, np.zeros((1, dvols_cont.shape[1]))))
                 dvol_cont_add = np.append(dvol_cont_add, 0)
                 mol_cont_add = np.vstack((mol_cont_add, dmol_disc[i]))
                 vol_cont_add = np.append(vol_cont_add, dvol_disc[i])
-    dvol_cont_add -= sub_cont_rate
-    row_sort = t_cont_add.argsort()
-    return t_cont_add[row_sort], dvols_cont_add[row_sort], dvol_cont_add[row_sort], \
+    dvol_cont_add -= cont_sub_rate
+    row_sort = t_cont_add_add.argsort()
+    return t_cont_add_add[row_sort], dvols_cont_add[row_sort], dvol_cont_add[row_sort], \
            mol_cont_add[row_sort], vol_cont_add[row_sort]
 
 
 # Add row to the start or end
-def add_start_end_row(t, dvols, dvol, mol, vol, t_end, sub_cont_rate):
+def add_start_end_row(t, dvols, dvol, mol, vol, t_end, cont_sub_rate):
     if 0 not in t:
         t = np.append(0, t)
         dvols = np.vstack((np.zeros((1, dvols.shape[1])), dvols))
-        dvol = np.append(-sub_cont_rate, dvol)
+        dvol = np.append(-cont_sub_rate, dvol)
         mol = np.vstack((0, mol))
         vol = np.append(0, vol)
     if t_end not in t:
@@ -91,6 +92,7 @@ def calc_mol_vol(t, dmol, dvol, dsub, mol, vol, mol0, vol0):
     return mol, vol
 
 
+# Group event data
 class EventData:
     def __init__(self, t, dmol, dvol, dsub, mol, vol):
         self.t = t
@@ -101,6 +103,7 @@ class EventData:
         self.vol = vol
 
 
+# Get moles and volumes
 def get_mol_vol(t, cont_event):
     num_spec = np.shape(cont_event.mol)[1]
     mol, vol = np.empty((len(t), num_spec)), np.empty(len(t))
@@ -115,30 +118,31 @@ def get_mol_vol(t, cont_event):
 
 
 # Calculate additions and subtractions of species
-def get_conc_events(t, num_spec, vol0, mol0, add_sol_conc, add_cont_rate, t_cont,
-                     add_one_shot, t_one_shot, sub_cont_rate):
+def get_conc_events(t, num_spec, vol0, mol0, add_sol_conc, cont_add_rate, t_cont_add,
+                     disc_add_vol, t_disc_add, cont_sub_rate):
 
-    sub_cont_rate = abs(sub_cont_rate) if sub_cont_rate else 0
-    t_disc, dvols_disc, dvol_disc = prepare_add(num_spec, add_one_shot, t_one_shot)
+    cont_sub_rate = abs(cont_sub_rate) if cont_sub_rate else 0
+    t_disc, dvols_disc, dvol_disc = prepare_add(num_spec, disc_add_vol, t_disc_add)
 
     dmol_disc = dvols_disc
     for i, conc in enumerate(add_sol_conc):
         if conc:
             dmol_disc[:, i] *= conc
 
-    t_cont, dvols_cont, dvol_cont, mol_cont, vol_cont = get_cont_add_disc(num_spec, add_cont_rate, t_cont, t_disc,
-                                                                          dmol_disc, dvol_disc, sub_cont_rate)
-    dsub_cont = -sub_cont_rate
+    t_cont, dvols_cont, dvol_cont, mol_cont, vol_cont = get_cont_add_disc(num_spec, cont_add_rate, t_cont_add, t_disc,
+                                                                          dmol_disc, dvol_disc, cont_sub_rate)
+    dcont_sub = -cont_sub_rate
 
-    t_event, dvols_cont, dvol_cont, mol_cont, vol_cont = add_start_end_row(t_cont, dvols_cont, dvol_cont, mol_cont, vol_cont, t[-1], sub_cont_rate)
+    t_event, dvols_cont, dvol_cont, mol_cont, vol_cont = add_start_end_row(t_cont, dvols_cont, dvol_cont, mol_cont,
+                                                                           vol_cont, t[-1], cont_sub_rate)
 
     dmol_cont = dvols_cont
     for i, conc in enumerate(add_sol_conc):
         if conc:
             dmol_cont[:, i] *= conc
 
-    mol_cont, vol_cont = calc_mol_vol(t_event, dmol_cont, dvol_cont, dsub_cont, mol_cont, vol_cont, mol0, vol0)
-    cont_event = EventData(t_event, dmol_cont, dvol_cont, dsub_cont, mol_cont, vol_cont)
+    mol_cont, vol_cont = calc_mol_vol(t_event, dmol_cont, dvol_cont, dcont_sub, mol_cont, vol_cont, mol0, vol0)
+    cont_event = EventData(t_event, dmol_cont, dvol_cont, dcont_sub, mol_cont, vol_cont)
 
     mol, vol = get_mol_vol(t, cont_event)
     conc = mol / vol[:, None]

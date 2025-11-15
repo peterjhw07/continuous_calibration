@@ -1,7 +1,6 @@
-"""CC Fit Equations"""
+"""CC Application Equations"""
 
 import numpy as np
-from continuous_calibration.fitting import gen_eqs
 
 
 # Custom fit equation
@@ -40,12 +39,12 @@ def fit_eq_exp_int(intensity, a, b, c):
     return - np.log(1 - ((intensity - c) / a)) / b
 
 
-# Tan fit equation
+# Tangential fit equation
 def fit_eq_tan(intensity, a, b):
     return np.tan(intensity / a) / b
 
 
-# Tan intercept fit equation
+# Tangential intercept fit equation
 def fit_eq_tan_int(intensity, a, b, c):
     return np.tan((intensity - c) / a) / b
 

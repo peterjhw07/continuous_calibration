@@ -1,4 +1,4 @@
-"""Continuous Calibration Run Script"""
+"""Continuous Calibration Curve Application Script"""
 
 import numpy as np
 import pandas as pd
@@ -102,6 +102,7 @@ def apply(df, spec_name=None, col=0, t_col=None, calib_df=None, conc_col=None, i
 
     data_arr, spec_name, species_alt, num_spec, t_col, col, params = get_prep.process_apply_input(df, spec_name,
                                                                                                   t_col, col, params)
+    conc_unit_adj, intensity_unit_adj, time_unit_adj = get_prep.units_adjust([conc_unit, intensity_unit, time_unit])
 
     # Define intensities and corresponding t (if applicable)
     intensity = np.empty((data_arr.shape[0], num_spec))
@@ -124,10 +125,10 @@ def apply(df, spec_name=None, col=0, t_col=None, calib_df=None, conc_col=None, i
     # Store time data
     if t_col:
         data.raw_df = pd.DataFrame(np.concatenate([t.reshape(-1, 1), intensity], axis=1),
-                                   columns=['Time / ' + time_unit] +
-                                           [i + 'Intensity / ' + intensity_unit for i in species_alt])
+                                   columns=['Time' + time_unit_adj] +
+                                           [i + 'Intensity' + intensity_unit_adj for i in species_alt])
     else:
-        data.raw_df = pd.DataFrame(intensity, columns=[i + 'Intensity / ' + intensity_unit for i in species_alt])
+        data.raw_df = pd.DataFrame(intensity, columns=[i + 'Intensity' + intensity_unit_adj for i in species_alt])
 
     if calib_df is not None:
         calib_arr, _, conc_col = get_prep.process_data_input(calib_df, num_spec, None, conc_col)
@@ -196,17 +197,17 @@ def apply(df, spec_name=None, col=0, t_col=None, calib_df=None, conc_col=None, i
 
     if calib_df is not None:
         data.data_fit = data_fit
-        data.data_fit_df = pd.DataFrame(data_fit, columns=[spec + 'Data Fit Concentration / ' + conc_unit for spec in species_alt])
+        data.data_fit_df = pd.DataFrame(data_fit, columns=[spec + 'Data Fit Concentration' + conc_unit_adj for spec in species_alt])
         if fit_eq is None:
             data.fit = data_fit
-            data.fit_df = pd.DataFrame(data_fit, columns=[spec + 'Fit Concentration / ' + conc_unit for spec in species_alt])
+            data.fit_df = pd.DataFrame(data_fit, columns=[spec + 'Fit Concentration' + conc_unit_adj for spec in species_alt])
             data.all_df = pd.concat([data.raw_df, data.fit_df], axis=1)
     if fit_eq:
         data.eq_fit = eq_fit
-        data.eq_fit_df = pd.DataFrame(eq_fit, columns=[spec + 'Equation Fit Concentration / ' + conc_unit for spec in species_alt])
+        data.eq_fit_df = pd.DataFrame(eq_fit, columns=[spec + 'Equation Fit Concentration' + conc_unit_adj for spec in species_alt])
         if calib_df is None:
             data.fit = eq_fit
-            data.fit_df = pd.DataFrame(eq_fit, columns=[spec + 'Fit Concentration / ' + conc_unit for spec in species_alt])
+            data.fit_df = pd.DataFrame(eq_fit, columns=[spec + 'Fit Concentration' + conc_unit_adj for spec in species_alt])
             data.all_df = pd.concat([data.raw_df, data.fit_df], axis=1)
     if calib_df is not None and fit_eq:
         data.fit = np.concatenate([data_fit, eq_fit], axis=1)

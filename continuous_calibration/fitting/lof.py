@@ -6,8 +6,9 @@ from continuous_calibration.fitting import lof_tests, regression
 from continuous_calibration.prep import get_prep
 
 
+# Calculate limit of fitting
 def get_lof(conc, intensity, num_spec, fit_eq='lin', intercept=False, limit_idx=None,
-            limit_test='Runs', limit_method='last', threshold=0.05, path_length=None):
+            limit_test='Runs', limit_method='auto', threshold=0.05, path_length=None):
     if limit_idx is None:
         limit_idx = [conc.shape[0]] * conc.shape[1]
     if not limit_test or not limit_method:
@@ -18,20 +19,24 @@ def get_lof(conc, intensity, num_spec, fit_eq='lin', intercept=False, limit_idx=
     else:
         if 'run' in limit_test.lower():
             lof_test = lof_tests.lof_map.get('Runs')
+            if 'auto' in limit_method.lower(): limit_method = 'last'
         elif 'rain' in limit_test.lower() and 'lin' in fit_eq.lower():
             lof_test = lof_tests.lof_map.get('Rainbow')
+            if 'auto' in limit_method.lower(): limit_method = 'last'
         elif ('harvey' in limit_test.lower() or 'hc' in limit_test.lower()) and 'lin' in fit_eq.lower():
             lof_test = lof_tests.lof_map.get('Harvey-Collier')
+            if 'auto' in limit_method.lower(): limit_method = 'last'
         elif 'shap' in limit_test.lower() or 'sw' in limit_test.lower():
             lof_test = lof_tests.lof_map.get('Shapiro-Wilk')
+            if 'auto' in limit_method.lower(): limit_method = 'last'
         elif 'rmse' in limit_test.lower() or 'mae' in limit_test.lower():
-            limit_method = 'min'
+            if 'auto' in limit_method.lower(): limit_method = 'min'
             if 'rmse' in limit_test.lower():
                 metric_index = 0
             else:
                 metric_index = 1
         elif 'r2' in limit_test.lower():
-            limit_method = 'max'
+            if 'auto' in limit_method.lower(): limit_method = 'max'
             metric_index = 2
 
         lof_idx, lof = [], []
@@ -54,8 +59,7 @@ def get_lof(conc, intensity, num_spec, fit_eq='lin', intercept=False, limit_idx=
                                                                                       intensity[:, i].reshape(-1, 1), fit_eq,
                                                                                       intercept=intercept, limit_idx=[idx])
                             rss, rmse, mae, r2, r2_adj, aic, bic = regression.residuals(intensity[:, i].reshape(-1, 1),
-                                                                        fit_lines_resid, lower_lim, intercept=intercept,
-                                                                        limit_idx=[idx])
+                                                                        fit_lines_resid, lower_lim, limit_idx=[idx])
                             test_res[idx - lower_lim] = [rmse, mae, r2][metric_index][0]
                         except:
                             pass
@@ -75,13 +79,14 @@ def get_lof(conc, intensity, num_spec, fit_eq='lin', intercept=False, limit_idx=
         fit_lines, fit_lines_resid, coeff, coeff_err = regression.fit_intensity_curve(conc, intensity, fit_eq,
                                                                                       intercept=intercept, limit_idx=lof_idx)
     if 'lin' in fit_eq.lower() and path_length:
-        mec = [coe['a'] / path_length for coe in coeff]
+        mac = [coe['a'] / path_length for coe in coeff]
     else:
-        mec = None
+        mac = None
 
-    return fit_lines, fit_lines_resid, coeff, coeff_err, mec, lof_idx, lof, indices, test_res
+    return fit_lines, fit_lines_resid, coeff, coeff_err, mac, lof_idx, lof, indices, test_res
 
 
+# Determine limit of fitting from appropriate test
 def try_except_test(indices, test, criterion, threshold=0.05):
     test = np.nan_to_num(test, nan=1.0)
     try:

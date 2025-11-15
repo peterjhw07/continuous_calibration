@@ -2,15 +2,17 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from continuous_calibration.plot.plot_func import plot_process, calc_mono_lim, calc_multi_lim
+from continuous_calibration.plot.plot_func import units_adjust, plot_process, calc_mono_lim, calc_multi_lim
 
 
-def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_error=None, limit=None, fit_line=None,
+# Plot intensity vs. concentration
+def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_error=None, upper_lim=None, fit_line=None,
                            resid=None, xlim=None, conc_unit='moles_unit volume_unit^-1',
                            intensity_unit='AU', f_format='svg', save_to='', return_fig=False, return_img=False,
                            transparent=False, font_size=12):
 
     num_spec = conc.shape[1]
+    conc_unit, intensity_unit = units_adjust([conc_unit, intensity_unit])
     if resid is not None:
         fig, axes = plt.subplots(nrows=2, ncols=num_spec, figsize=(num_spec * 6, 5),
                                  gridspec_kw={'height_ratios': [3, 1]})
@@ -37,12 +39,11 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
         if smooth_intensity is not None and smooth_intensity[:, col] is not None:
             ax.plot(conc, smooth_intensity[:, col], 'g', label='Smoothed Data')
             y_data.append(smooth_intensity[:, col])
-        if fit_line is not None and limit is not None:
-            ax.plot(conc[:limit[col] + 1, col], fit_line[:limit[col] + 1, col], 'r', label='Fit')
-            # ax.plot(conc[:, col], fit_line[:, col], 'r', label='Fit')
-            y_data.append(fit_line[:limit[col] + 1, col])
+        if fit_line is not None and upper_lim is not None:
+            ax.plot(conc[:upper_lim[col] + 1, col], fit_line[:upper_lim[col] + 1, col], 'r', label='Fit')
+            y_data.append(fit_line[:upper_lim[col] + 1, col])
             try:
-                ax.axvline(x=conc[limit, col], color='b', linestyle='--', label='Limit of Fitting')
+                ax.axvline(x=conc[upper_lim, col], color='b', linestyle='--', label='Limit of Fitting')
             except:
                 pass
         elif fit_line is not None:
@@ -53,8 +54,8 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
             ax.set_ylim(calc_multi_lim(y_data))
         else:
             ax.set_xlim(xlim, edge_adj=0)
-        ax.set_xlabel('Conc. / ' + conc_unit, fontsize=font_size)
-        ax.set_ylabel('Intensity / ' + intensity_unit, fontsize=font_size)
+        ax.set_xlabel('Concentration' + conc_unit, fontsize=font_size)
+        ax.set_ylabel('Intensity' + intensity_unit, fontsize=font_size)
         if resid is not None:
             ax.tick_params(axis='x', which='both', bottom=False, labelbottom=False)
         else:
@@ -68,11 +69,11 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
                 ax = axes[1, col]
             else:
                 ax = axes[1]
-            if limit:
-                ax.scatter(conc[:limit[col] + 1, col], resid[:limit[col] + 1, col], 8, 'k', label='Residuals')
-                y_data.append(resid[:limit[col] + 1, col])
+            if upper_lim:
+                ax.scatter(conc[:upper_lim[col] + 1, col], resid[:upper_lim[col] + 1, col], 8, 'k', label='Residuals')
+                y_data.append(resid[:upper_lim[col] + 1, col])
                 try:
-                    ax.axvline(x=conc[limit[col], col], color='b', linestyle='--', label='Limit of Fitting')
+                    ax.axvline(x=conc[upper_lim[col], col], color='b', linestyle='--', label='Limit of Fitting')
                 except:
                     pass
             else:
@@ -86,8 +87,8 @@ def plot_intensity_vs_conc(conc, intensity, smooth_intensity=None, intensity_err
                 ax.set_ylim(calc_multi_lim(y_data))
             else:
                 ax.set_xlim(xlim)
-            ax.set_xlabel('Conc. / ' + conc_unit, fontsize=font_size)
-            ax.set_ylabel('Intensity / ' + intensity_unit, fontsize=font_size)
+            ax.set_xlabel('Concentration' + conc_unit, fontsize=font_size)
+            ax.set_ylabel('Intensity' + intensity_unit, fontsize=font_size)
             ax.tick_params(axis='both', which='major', labelsize=font_size)
             # ax_lower.legend(loc='lower right', fontsize=font_size, frameon=False)
 

@@ -1,7 +1,10 @@
+"""CC Breakpoint Calculation"""
+
 import numpy as np
 import pwlf
 
 
+# Calculate breakpoints
 def get_breakpoints(t, intensity, t_cont, guesses=None, bounds=None):
     breaks = []
     for spec in range(intensity.shape[1]):
@@ -12,8 +15,4 @@ def get_breakpoints(t, intensity, t_cont, guesses=None, bounds=None):
                 # Fit the model with 2 breakpoints (3 segments)
                 breaks.append(model.fit_guess([guesses[spec][i]])[1])
             t_cont[spec][i] = max(breaks)
-
-    # Predict
-    # intensity_hat = model.predict(t)
-
     return t_cont

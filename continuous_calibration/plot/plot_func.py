@@ -12,6 +12,18 @@ log.setLevel(logging.DEBUG)
 np.seterr(divide='ignore', invalid='ignore')
 
 
+# Adjusts DataFrame and axis titles
+def units_adjust(units):
+    if not isinstance(units, list):
+        units = [units]
+    for i in range(len(units)):
+        if units[i]:
+            units[i] = ' / ' + units[i]
+        else:
+            units[i] = ''
+    return units
+
+
 # Calculates limits from data
 def calc_lim(lower_lim, upper_lim, edge_adj=0.02):
     return [float(lower_lim - (edge_adj * (upper_lim - lower_lim))),
