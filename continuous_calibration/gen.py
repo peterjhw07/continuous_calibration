@@ -245,7 +245,6 @@ def gen(df, spec_name=None, t_col=0, col=1, mol0=0, vol0=None, add_sol_conc=[], 
 
         # Average avg_intensity values of equal concentrations
         data.avg_conc, data.avg_intensity, data.std = get_prep.avg_repeats(data.conc, intensity, zero=zero)
-
         return data
 
     data = raw_data_process(data, mol0_temp)

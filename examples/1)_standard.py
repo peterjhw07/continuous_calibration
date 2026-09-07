@@ -13,7 +13,7 @@ from continuous_calibration import gen
 # System parameters
 vol0 = 0.01  # initially 0.01 L monitored solution volume
 add_sol_conc = 1  # analyte addition solution of concentration 1 M
-cont_add_rate = 0.0002  # analyte addition solution added at rate 0.0002 L / min
+cont_add_rate = 0.00002  # analyte addition solution added at rate 0.00002 L / min
 t_cont_add = 1  # addition of calibrant solution started at 1 min
 
 time_unit = 'min'
@@ -21,8 +21,8 @@ conc_unit = 'M'
 
 # Simulated calibration curve parameters
 A = 100  # calibration gradient
-k = 3  # exponential deviation
-noise_frac = 0.01  # 1% noise of maximum intensity
+k = 30  # exponential deviation
+noise_frac = 0.01  # 1% noise of maximum possible intensity
 
 # Calibration data simulation
 df = pd.DataFrame(columns=['Time', 'Intensity'])
